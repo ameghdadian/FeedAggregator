@@ -4,14 +4,14 @@ from django.contrib.auth import get_user_model
 from core import models
 
 
-def create_topic(**params):
+def create_feedsource(**params):
     defaults = {
-        'name': 'Test topic',
+        'name': 'Test feedsource',
         'link': 'Test link'
     }
 
     defaults.update(params)
-    return models.Topic.objects.create(**defaults)
+    return models.FeedSource.objects.create(**defaults)
 
 
 def create_user(**params):
@@ -29,7 +29,7 @@ def create_feed(**params):
         'title': "Weather",
         'link': "test",
         'description': 'Tomorrow forecast',
-        'topic': create_topic()
+        'topic': create_feedsource()
     }
 
     defaults.update(params)
@@ -82,11 +82,11 @@ class ModelTests(TestCase):
             str(comment), f'{comment.content} by {comment.commenter.username}'
             )
 
-    def test_topic_str_repr(self):
-        '''Test the string representation of Topic instances'''
-        topic = models.Topic.objects.create(
+    def test_feedsrc_str_repr(self):
+        '''Test the string representation of FeedSource instances'''
+        source = models.FeedSource.objects.create(
             name='Sport',
             link='Test'
             )
 
-        self.assertEqual(str(topic), topic.name)
+        self.assertEqual(str(source), source.name)
