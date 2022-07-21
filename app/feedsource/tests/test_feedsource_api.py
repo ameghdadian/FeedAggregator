@@ -7,6 +7,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from core.models import FeedSource
+from feedsource.serializers import FeedSourceSerializer
 
 
 ALL_TOPICS_URL = reverse('feedsource:feedsource-list')
@@ -55,9 +56,11 @@ class PrivateFeedSourceApiTests(TestCase):
         '''Test that retrieving all feedsources is successful'''
         res = self.client.get(ALL_TOPICS_URL)
 
+        feedsources = FeedSource.objects.all()
+        serializer = FeedSourceSerializer(feedsources, many=True)
+
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn('name', res.data[0])
-        self.assertIn('id', res.data[0])
+        self.assertEqual(res.data['results'], serializer.data)
 
     def test_post_all_feedsource_not_allowed(self):
         '''Test that POST is not allowed on all-topics url'''
