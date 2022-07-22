@@ -6,10 +6,15 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from core.models import FeedSource, Feed
-from feed.serializer import ListFeedSerializer
+from feed.serializer import ListFeedSerializer, RetriveSingleFeedSerializer
 
 
 ALL_FEEDS_URL = reverse('feed:all-list')
+
+
+def detail_feed_url(feed_id):
+    '''Retrieve single feed url'''
+    return reverse('feed:all-detail', args=[feed_id])
 
 
 def create_user(username='test', password='testpass'):
@@ -44,10 +49,18 @@ class PublicFeedApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-    def test_unauthorized_feed_retrieve_fails(self):
+    def test_unauthorized_feed_getall_fails(self):
         '''Test that unauthrized user can not access feed items'''
         res = self.client.get(ALL_FEEDS_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_unauthorized_feed_retrieve_fails(self):
+        '''Test that unauthrized user can not access detail feed view'''
+        feed_src1 = create_feedsource()
+        feed = create_feed(feed_src1)
+
+        url = detail_feed_url(feed.id)
+        res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
@@ -59,7 +72,7 @@ class PrivateFeedApiTests(TestCase):
         self.user = create_user()
         self.client.force_authenticate(self.user)
 
-    def test_retrieving_feeds_successful(self):
+    def test_gettingall_feeds_successful(self):
         '''
         Test that a user can only see its own followed feeds
         '''
@@ -76,9 +89,26 @@ class PrivateFeedApiTests(TestCase):
 
         res = self.client.get(ALL_FEEDS_URL)
 
-        user_feeds = Feed.objects.filter(topic__in=[feed_src1.id, feed_src2.id])\
-            .order_by('-title')
+        user_feeds = Feed.objects.\
+            filter(topic__in=[feed_src1.id, feed_src2.id]).order_by('-title')
         serializer = ListFeedSerializer(user_feeds, many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(serializer.data, res.data['results'])
+
+    def test_retrieving_feeds_successful(self):
+        '''
+        Test that an authorized user can only see a single feed
+        '''
+        feed_src1 = create_feedsource()
+        feed_src1.followed_by.add(self.user)
+
+        feed = create_feed(feed_src1)
+
+        url = detail_feed_url(feed.id)
+        res = self.client.get(url)
+
+        serializer = RetriveSingleFeedSerializer(feed)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
