@@ -2,6 +2,7 @@ version: "3"
 
 services:
   app:
+    restart: always
     build:
       context: .
     ports:
@@ -21,11 +22,14 @@ services:
       - redis
   
   db:
+    restart: always
     image: postgres:10-alpine
     environment:
       - POSTGRES_DB=app
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=superstrongpass
+    expose:
+      - 5432
   
   redis:
     image: redis:7.0-alpine
@@ -54,4 +58,14 @@ services:
     build:
       context: .
     command: celery -A app worker -Q ${FEED_CELERY_QUEUE}
+    environment:
+      - DB_HOST=db
+      - DB_NAME=app
+      - DB_USER=postgres
+      - DB_PASS=superstrongpass
+    depends_on:
+      - db
+      - redis
+      - app
+      - celery-beat
     

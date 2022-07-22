@@ -33,9 +33,8 @@ class CeleryRouter:
 
 @celery_app.on_after_finalize.connect
 def setup_periodic_task(sender, **kwargs):
-    # from feed.tasks import test
-    # sender.add_periodic_task(1, test.s('HAHA'))
-    pass
+    from feed.tasks import fetch_feeds
+    sender.add_periodic_task(60, fetch_feeds.s())
 
 
 celery_app.config_from_object('django.conf:settings', namespace='CELERY')
