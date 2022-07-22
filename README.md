@@ -1,7 +1,7 @@
 # DKChallenge
 
 ## Initial project setup
- - Create a `.env` file with the following content:
+ - Create a `.env` file with the following content at the root project directory:
   ```
     FEED_CELERY_QUEUE = 'feed_tasks'
   ```
