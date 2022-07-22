@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 import os
 from pathlib import Path
 
+from kombu import Queue
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -124,6 +126,26 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+# Celery Queue Routing Keys
+FEED_ROUTING_KEY = 'feed.tasks'
+DEFAULT_ROUTING_KEY = 'default'
+
+
+# Celery Configuration Options
+CELERY_TIMEZONE = 'UTC'
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://redis:6379/0')
+CELERY_BEAT_MAX_LOOP_INTERVAL = 3
+CELERY_TASK_DEFAULT_QUEUE = 'default'
+CELERY_TASK_DEFAULT_ROUTING_KEY = 'default'
+CELERY_TASK_DEFAULT_EXCHANGE = 'celery'
+CELERY_TASK_DEFAULT_EXCHANGE_TYPE = 'direct'
+CELERY_TASK_IGNORE_RESULT = True
+
+CELERY_TASK_QUEUES = {
+    Queue('default', routing_key=DEFAULT_ROUTING_KEY),
+    Queue('feed_tasks', routing_key=FEED_ROUTING_KEY),
+}
 
 
 # Static files (CSS, JavaScript, Images)
