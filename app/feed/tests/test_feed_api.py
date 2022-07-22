@@ -10,6 +10,7 @@ from feed.serializer import ListFeedSerializer, RetriveSingleFeedSerializer
 
 
 ALL_FEEDS_URL = reverse('feed:all-list')
+UNREAD_URL = reverse('feed:all-unread')
 
 
 def detail_feed_url(feed_id):
@@ -32,9 +33,9 @@ def create_feedsource():
     return feedsrc
 
 
-def create_feed(feed_src, **params):
+def create_feed(feed_src, id, **params):
     defaults = {
-        'title': f'Test title {feed_src.id}',
+        'title': f'Test title {id}',
         'link': 'Test link',
         'description': 'Test description',
         'topic': feed_src,
@@ -57,10 +58,16 @@ class PublicFeedApiTests(TestCase):
     def test_unauthorized_feed_retrieve_fails(self):
         '''Test that unauthrized user can not access detail feed view'''
         feed_src1 = create_feedsource()
-        feed = create_feed(feed_src1)
+        feed = create_feed(feed_src1, 1)
 
         url = detail_feed_url(feed.id)
         res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_unauthorized_unread_api_fails(self):
+        '''Test that unauthorized user cannot access unread endpoint'''
+        res = self.client.get(UNREAD_URL)
+
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
@@ -83,12 +90,10 @@ class PrivateFeedApiTests(TestCase):
         feed_src1.followed_by.add(self.user)
         feed_src2.followed_by.add(self.user)
 
-        create_feed(feed_src1)
-        create_feed(feed_src2)
-        create_feed(feed_src3)
-
+        create_feed(feed_src1, 1)
+        create_feed(feed_src2, 2)
+        create_feed(feed_src3, 3)
         res = self.client.get(ALL_FEEDS_URL)
-
         user_feeds = Feed.objects.\
             filter(topic__in=[feed_src1.id, feed_src2.id]).order_by('-title')
         serializer = ListFeedSerializer(user_feeds, many=True)
@@ -103,7 +108,7 @@ class PrivateFeedApiTests(TestCase):
         feed_src1 = create_feedsource()
         feed_src1.followed_by.add(self.user)
 
-        feed = create_feed(feed_src1)
+        feed = create_feed(feed_src1, 1)
 
         url = detail_feed_url(feed.id)
         res = self.client.get(url)
@@ -112,3 +117,20 @@ class PrivateFeedApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(serializer.data, res.data)
+
+    def test_retrieve_unread_successful(self):
+        '''Test that authorized user can access unread endpoint successfully'''
+        feed_src1 = create_feedsource()
+        feed_src2 = create_feedsource()
+        feed_src1.followed_by.add(self.user)
+
+        feed1 = create_feed(feed_src1, 1)
+        create_feed(feed_src1, 2)
+        create_feed(feed_src2, 3)
+
+        feed1.read_by.add(self.user.id)
+
+        res = self.client.get(UNREAD_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['count'], 1)
