@@ -6,8 +6,8 @@
     FEED_CELERY_QUEUE = 'feed_tasks'
   ```
  - Run `docker-compose build` through terminal,
- - Run `docker-compose run --rm app sh -c 'python manage.py fillfeedsource'` to fill the initial feed sources table,
-  - Run `docker-compose up`
+ - Run `docker-compose up`
+ - Open another terminal window and run `docker-compose run --rm app sh -c 'python manage.py fillfeedsource'` to fill the initial feed sources table,
 
 ## Run tests
 You can run the tests by executing following command in terminal:
